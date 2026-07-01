@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First-Time Setup | Saveen Web Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { dark:'#07071a' },
+        fontFamily: { sans:['Outfit','system-ui','sans-serif'] }
+      }}
+    }
+  </script>
+  <link rel="stylesheet" href="assets/css/custom.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/ui.js"></script>
+</head>
+<body class="bg-dark min-h-screen text-slate-100 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+
+
+<div class="relative z-10 w-full max-w-xl fade-in">
+
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-3xl mb-4">🛠️</div>
+    <h1 class="text-3xl font-black text-white">First-Time Setup</h1>
+    <p class="text-slate-500 mt-2 text-sm">Run this page ONCE to initialize your Firebase database and create the Admin account.</p>
+  </div>
+
+  <!-- Warning -->
+  <div class="glass rounded-xl px-5 py-4 border border-red-500/30 bg-red-500/5 mb-6">
+    <div class="flex items-start gap-3">
+      <span class="text-red-400 text-xl mt-0.5">⚠️</span>
+      <div>
+        <p class="text-red-300 font-bold text-sm mb-1">Important Warning</p>
+        <ul class="text-slate-400 text-xs space-y-1 list-disc list-inside">
+          <li>Run this page <strong class="text-white">only once</strong> on a fresh Firebase project.</li>
+          <li>Running it again will attempt to re-create existing data.</li>
+          <li><strong class="text-white">Delete or rename this file after setup is complete.</strong></li>
+          <li>Make sure Firebase config is correctly set in <code class="text-violet-300">assets/js/firebase-config.js</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup info -->
+  <div class="glass-strong rounded-2xl p-6 border border-white/10 mb-5">
+    <h2 class="font-bold text-white mb-4">What will be created:</h2>
+    <div class="space-y-3">
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-green-400">✓</span>
+        <span class="text-slate-300">Firebase Auth user: <code class="text-violet-300">saveen</code> / <code class="text-violet-300">760543250</code></span>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-green-400">✓</span>
+        <span class="text-slate-300">Firestore <code class="text-violet-300">users</code> document for Admin</span>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-green-400">✓</span>
+        <span class="text-slate-300">5 default User Levels with permissions</span>
+      </div>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="text-green-400">✓</span>
+        <span class="text-slate-300">3 default Site Pages (Home, About, Contact)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup log -->
+  <div id="setupLog" class="glass rounded-xl p-4 border border-white/8 mb-5 min-h-[120px] font-mono text-xs text-slate-400 space-y-1 overflow-y-auto max-h-60 hidden">
+    <p class="text-slate-600">Setup log will appear here...</p>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex gap-3">
+    <button id="setupBtn" onclick="runSetup()"
+            class="btn-primary flex-1 justify-center py-3.5 text-base rounded-xl">
+      🚀 Run Setup Now
+    </button>
+    <a href="index.html" class="btn-ghost px-6 py-3.5 rounded-xl text-sm">← Home</a>
+  </div>
+
+  <p id="setupDone" class="hidden mt-5 text-center text-green-400 font-semibold">
+    ✅ Setup complete! You can now <a href="login.html" class="underline">login</a> with <strong>saveen / 760543250</strong>
+  </p>
+</div>
+
+<script>
+const ADMIN_AUTH_EMAIL = 'saveen@saveen-admin.portal';
+const ADMIN_PASSWORD   = '760543250';
+
+function log(msg, type = 'info') {
+  const logEl = document.getElementById('setupLog');
+  logEl.classList.remove('hidden');
+  const colors = { info:'text-slate-300', ok:'text-green-400', err:'text-red-400', warn:'text-amber-400' };
+  logEl.innerHTML += `<p class="${colors[type] || colors.info}">${type === 'ok' ? '✓' : type === 'err' ? '✕' : type === 'warn' ? '⚠' : '›'} ${msg}</p>`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function runSetup() {
+  const btn = document.getElementById('setupBtn');
+  btn.disabled = true;
+  btn.textContent = 'Setting up...';
+
+  // Show log box first so user sees progress
+  document.getElementById('setupLog').classList.remove('hidden');
+  document.getElementById('setupLog').innerHTML = '';
+  log('Starting setup...');
+
+  try {
+    // ── 1. Create Admin Firebase Auth user ────────────────────
+    log('Creating Admin Firebase Auth user...');
+    let adminUid;
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_PASSWORD);
+      adminUid = cred.user.uid;
+      log(`Admin Auth user created. UID: ${adminUid}`, 'ok');
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') {
+        // Already exists – sign in to get UID
+        log('Admin Auth user already exists. Fetching UID...', 'warn');
+        const cred2 = await auth.signInWithEmailAndPassword(ADMIN_AUTH_EMAIL, ADMIN_PASSWORD);
+        adminUid = cred2.user.uid;
+        log(`Admin UID: ${adminUid}`, 'ok');
+      } else throw err;
+    }
+
+    // ── 2. Write Admin to Firestore users ────────────────────
+    log('Writing Admin user to Firestore...');
+    await db.collection('users').doc(adminUid).set({
+      fullName:   'Saveen Admin',
+      email:      'saveen@admin.local',
+      authEmail:  ADMIN_AUTH_EMAIL,
+      username:   'saveen',
+      birthday:   '2000-01-01',
+      userLevel:  'admin',
+      status:     'active',
+      createdAt:  firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    log('Admin user document created.', 'ok');
+
+    // ── 3. Create User Levels ────────────────────────────────
+    log('Creating User Levels...');
+    const levels = [
+      {
+        id: 'admin', name: 'Admin', displayName: '👑 Admin', level: 0,
+        permissions: Object.fromEntries([
+          'view_home','view_about','view_contact','view_all_pages',
+          'view_user_dashboard','edit_own_profile','manage_users',
+          'manage_user_levels','manage_pages','manage_requests',
+          'manage_settings','view_admin_dashboard'
+        ].map(p => [p, true]))
+      },
+      {
+        id: 'pro_user', name: 'Pro User', displayName: '⭐ Pro User', level: 1,
+        permissions: {
+          view_home:true, view_about:true, view_contact:true,
+          view_all_pages:true, view_user_dashboard:true, edit_own_profile:true,
+          manage_users:false, manage_user_levels:false, manage_pages:false,
+          manage_requests:false, manage_settings:false, view_admin_dashboard:false,
+        }
+      },
+      {
+        id: 'normal_user', name: 'Normal User', displayName: '👤 Normal User', level: 2,
+        permissions: {
+          view_home:true, view_about:true, view_contact:true,
+          view_all_pages:false, view_user_dashboard:true, edit_own_profile:true,
+          manage_users:false, manage_user_levels:false, manage_pages:false,
+          manage_requests:false, manage_settings:false, view_admin_dashboard:false,
+        }
+      },
+      {
+        id: 'low_user', name: 'Low User', displayName: '🔵 Low User', level: 3,
+        permissions: {
+          view_home:true, view_about:true, view_contact:false,
+          view_all_pages:false, view_user_dashboard:true, edit_own_profile:false,
+          manage_users:false, manage_user_levels:false, manage_pages:false,
+          manage_requests:false, manage_settings:false, view_admin_dashboard:false,
+        }
+      },
+      {
+        id: 'lower_user', name: 'Lower User', displayName: '⚪ Lower User', level: 4,
+        permissions: {
+          view_home:true, view_about:false, view_contact:false,
+          view_all_pages:false, view_user_dashboard:true, edit_own_profile:false,
+          manage_users:false, manage_user_levels:false, manage_pages:false,
+          manage_requests:false, manage_settings:false, view_admin_dashboard:false,
+        }
+      },
+    ];
+
+    for (const level of levels) {
+      const { id, ...data } = level;
+      await db.collection('userLevels').doc(id).set(data, { merge: true });
+      log(`User Level "${data.displayName}" created.`, 'ok');
+    }
+
+    // ── 4. Create default Site Pages ─────────────────────────
+    log('Creating default site pages...');
+    const pages = [
+      { title:'Home', slug:'/', filename:'index.html', isPublic:true, requiredLevel:'', order:1 },
+      { title:'About', slug:'/about.html', filename:'about.html', isPublic:false, requiredLevel:'low_user', order:2 },
+      { title:'Contact', slug:'/contact.html', filename:'contact.html', isPublic:false, requiredLevel:'normal_user', order:3 },
+    ];
+    for (const page of pages) {
+      await db.collection('sitePages').add({ ...page, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      log(`Page "${page.title}" created.`, 'ok');
+    }
+
+    // ── Done ─────────────────────────────────────────────────
+    log('🎉 Setup completed successfully!', 'ok');
+    // Sign out so user must login manually
+    await auth.signOut();
+    log('Signed out – please login with: saveen / 760543250', 'ok');
+    document.getElementById('setupDone').classList.remove('hidden');
+    btn.textContent = '✅ Setup Complete';
+    btn.className = 'flex-1 justify-center py-3.5 text-base rounded-xl bg-green-500/20 text-green-400 border border-green-500/30 cursor-not-allowed';
+
+  } catch (err) {
+    console.error(err);
+    log(`ERROR: ${err.message}`, 'err');
+    btn.disabled = false;
+    btn.textContent = '🚀 Run Setup Now';
+    showToast('Setup failed: ' + err.message, 'error', 8000);
+  } finally {
+    hideLoading();
+  }
+}
+</script>
+</body>
+</html>

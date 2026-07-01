@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About | Saveen Web Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { primary:'#7c3aed', accent:'#3b82f6', dark:'#07071a' },
+        fontFamily: { sans:['Outfit','system-ui','sans-serif'] }
+      }}
+    }
+  </script>
+  <link rel="stylesheet" href="assets/css/custom.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/permissions.js"></script>
+  <script src="assets/js/auth.js"></script>
+</head>
+<body class="bg-dark min-h-screen text-slate-100 overflow-x-hidden">
+
+<div id="loadingOverlay" class="hidden">
+  <div class="text-center"><div class="loader mx-auto mb-3"></div><p class="text-slate-400 text-sm">Loading...</p></div>
+</div>
+
+<!-- Nav placeholder - In a real setup this could be a PHP file, but we'll use a JS inject or just static HTML for the demo -->
+<nav id="mainNav" class="fixed top-0 left-0 right-0 z-40 transition-all duration-300">
+  <div class="glass mx-4 mt-3 px-5 py-3 flex items-center justify-between rounded-2xl border border-white/8 bg-[#07071acc] backdrop-blur-xl">
+    <a href="index.html" class="flex items-center gap-2 text-lg font-bold">
+      <span class="text-2xl">⚡</span>
+      <span class="grad-text">Saveen</span>
+      <span class="text-slate-300">Portal</span>
+    </a>
+    <div class="hidden md:flex items-center gap-1">
+      <a href="index.html" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-violet-300 transition-all">Home</a>
+      <a href="about.html" class="px-3 py-1.5 rounded-lg text-sm font-medium text-violet-400 bg-violet-500/10">About</a>
+      <a href="contact.html" data-permission="view_contact" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-violet-300 transition-all">Contact</a>
+      <a href="user/dashboard.php" data-auth="true" class="nav-user hidden px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-violet-300 transition-all">Dashboard</a>
+      <a href="admin/dashboard.php" data-admin class="nav-admin hidden px-3 py-1.5 rounded-lg text-sm font-medium text-amber-400/80 hover:text-amber-300 transition-all">Admin</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="login.html" data-auth="false" class="nav-guest btn-primary py-2 px-4 text-sm">Login</a>
+      <div class="nav-user hidden relative" id="userMenuWrap">
+        <button onclick="document.getElementById('userDropdown').classList.toggle('hidden')"
+                class="flex items-center gap-2 glass px-3 py-1.5 rounded-xl hover:border-violet-500/40 transition-all text-sm">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white"><span data-nav-username>U</span></div>
+          <span class="hidden sm:block text-slate-300 font-medium" data-nav-username>User</span>
+        </button>
+        <div id="userDropdown" class="hidden absolute right-0 top-12 w-52 glass-strong rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50">
+          <a href="user/dashboard.php" class="block px-4 py-2 text-sm text-slate-300 hover:bg-white/5">Dashboard</a>
+          <button onclick="logout()" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="h-32"></div>
+
+<main class="max-w-4xl mx-auto px-6 py-12">
+  <div class="text-center mb-16 fade-in">
+    <h1 class="text-5xl font-black text-white mb-4">About <span class="grad-text">Saveen Portal</span></h1>
+    <p class="text-slate-400 text-lg">A modern, secure, and dynamic web application platform.</p>
+  </div>
+  
+  <div class="glass rounded-3xl p-8 md:p-12 border border-white/8 fade-in" style="animation-delay: .1s">
+    <h2 class="text-2xl font-bold text-white mb-6">Our Mission</h2>
+    <p class="text-slate-300 leading-relaxed mb-8">
+      We built Saveen Portal to demonstrate how modern web technologies can come together to create a seamless, real-time experience for users. 
+      By combining the power of Firebase's real-time capabilities with a responsive, glassmorphism-inspired UI, we provide a platform that is both 
+      beautiful and functional.
+    </p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <h3 class="text-xl font-bold text-violet-400 mb-4 flex items-center gap-2">
+          <span>🛡️</span> Security First
+        </h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Security is at the core of our platform. We use advanced role-based access control (RBAC) to ensure that users only see what they are authorized to see.
+        </p>
+      </div>
+      <div>
+        <h3 class="text-xl font-bold text-blue-400 mb-4 flex items-center gap-2">
+          <span>⚡</span> Real-Time Speed
+        </h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Powered by Firebase, our data layer syncs instantly across all connected devices. Changes made by administrators are reflected immediately without page reloads.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Enforce permission for this page
+requirePermission('view_about', 'index.html');
+</script>
+
+</body>
+</html>

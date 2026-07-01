@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Saveen Web Portal – A powerful multi-level access management system with real-time Firebase integration.">
+  <title>Home | Saveen Web Portal</title>
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { primary:'#7c3aed', accent:'#3b82f6', surface:'#0d0d24', dark:'#07071a' },
+        fontFamily: { sans:['Outfit','system-ui','sans-serif'] }
+      }}
+    }
+  </script>
+  <link rel="stylesheet" href="assets/css/custom.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/permissions.js"></script>
+  <script src="assets/js/auth.js"></script>
+</head>
+<body class="bg-dark min-h-screen text-slate-100 overflow-x-hidden">
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="hidden">
+  <div class="text-center"><div class="loader mx-auto mb-3"></div><p class="text-slate-400 text-sm">Loading...</p></div>
+</div>
+
+<!-- ── Navigation ─────────────────────────────────────────────── -->
+<nav id="mainNav" class="fixed top-0 left-0 right-0 z-40">
+  <div class="glass mx-4 mt-3 px-5 py-3 flex items-center justify-between rounded-2xl"
+       style="background:rgba(7,7,26,.75); backdrop-filter:blur(24px);">
+    <a href="index.html" class="flex items-center gap-2 text-lg font-bold">
+      <span class="text-2xl">⚡</span>
+      <span class="grad-text">Saveen</span>
+      <span class="text-slate-300">Portal</span>
+    </a>
+    <div class="hidden md:flex items-center gap-1">
+      <a href="index.html" class="px-3 py-1.5 rounded-lg text-sm font-medium text-violet-400 bg-violet-500/10">Home</a>
+      <a href="about.html" data-permission="view_about" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-violet-300 transition-all">About</a>
+      <a href="contact.html" data-permission="view_contact" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-violet-300 transition-all">Contact</a>
+      <a href="user/dashboard.php" data-auth="true" class="nav-user hidden px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-violet-300 transition-all">Dashboard</a>
+      <a href="admin/dashboard.php" data-admin class="nav-admin hidden px-3 py-1.5 rounded-lg text-sm font-medium text-amber-400/80 hover:text-amber-300 transition-all">Admin</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="login.html" data-auth="false" class="nav-guest btn-primary py-2 px-4 text-sm">🔐 Login</a>
+      <div class="nav-user hidden relative" id="userMenuWrap">
+        <button onclick="document.getElementById('userDropdown').classList.toggle('hidden')"
+                class="flex items-center gap-2 glass px-3 py-1.5 rounded-xl hover:border-violet-500/40 transition-all text-sm">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white" data-nav-username>U</div>
+          <span class="hidden sm:block text-slate-300 font-medium" data-nav-username>User</span>
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="userDropdown" class="hidden absolute right-0 top-12 w-52 glass-strong rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50 fade-in">
+          <div class="px-4 py-3 border-b border-white/8">
+            <p class="text-xs text-slate-500">Logged in as</p>
+            <p class="text-sm font-semibold text-white" data-nav-username>User</p>
+            <p class="text-xs text-violet-400" data-nav-level></p>
+          </div>
+          <a href="user/profile.php" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition">👤 My Profile</a>
+          <a href="user/dashboard.php" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition">🏠 Dashboard</a>
+          <a href="admin/dashboard.php" data-admin class="nav-admin hidden flex items-center gap-2 px-4 py-2.5 text-sm text-amber-400/80 hover:bg-amber-500/10 hover:text-amber-300 transition">⚙️ Admin Panel</a>
+          <div class="border-t border-white/8">
+            <button onclick="logout()" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition">🚪 Logout</button>
+          </div>
+        </div>
+      </div>
+      <button onclick="toggleMobileMenu()" class="md:hidden glass p-2 rounded-lg">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobileMenu" class="hidden md:hidden mx-4 mt-1 glass rounded-2xl border border-white/8 overflow-hidden">
+    <div class="flex flex-col py-2">
+      <a href="index.html" class="px-5 py-3 text-sm text-violet-400 bg-violet-500/5">🏠 Home</a>
+      <a href="about.html" data-permission="view_about" class="px-5 py-3 text-sm text-slate-300 hover:bg-white/5 transition">ℹ️ About</a>
+      <a href="contact.html" data-permission="view_contact" class="px-5 py-3 text-sm text-slate-300 hover:bg-white/5 transition">📬 Contact</a>
+      <a href="user/dashboard.php" class="nav-user hidden px-5 py-3 text-sm text-slate-300 hover:bg-white/5 transition">📊 Dashboard</a>
+      <a href="admin/dashboard.php" class="nav-admin hidden px-5 py-3 text-sm text-amber-400/80 hover:bg-amber-500/10 transition">⚙️ Admin Panel</a>
+      <button onclick="logout()" class="nav-user hidden text-left px-5 py-3 text-sm text-red-400/80 hover:bg-red-500/10 transition">🚪 Logout</button>
+      <a href="login.html" class="nav-guest px-5 py-3 text-sm text-violet-400 hover:bg-violet-500/10 transition">🔐 Login / Register</a>
+    </div>
+  </div>
+</nav>
+
+<div class="h-24"></div>
+
+<!-- ── Hero Section ───────────────────────────────────────────── -->
+<section class="relative min-h-[85vh] flex items-center justify-center overflow-hidden px-6">
+  <!-- Background blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <!-- Grid overlay -->
+  <div class="absolute inset-0 opacity-5"
+       style="background-image:linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px);background-size:50px 50px;"></div>
+
+  <div class="relative z-10 text-center max-w-4xl mx-auto fade-in">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-sm text-violet-300 mb-6 border border-violet-500/20">
+      <div class="pulse-dot"></div>
+      <span>Powered by Firebase Real-Time Database</span>
+    </div>
+
+    <!-- Headline -->
+    <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight">
+      <span class="text-white">Welcome to</span><br>
+      <span class="grad-text">Saveen Portal</span>
+    </h1>
+
+    <p class="text-slate-400 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
+      A powerful multi-level access management system. Manage users, control permissions, and keep everything in sync across all devices in real time.
+    </p>
+
+    <!-- CTAs -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="login.html" data-auth="false" class="nav-guest btn-primary px-8 py-3 text-base rounded-xl">
+        🚀 Get Started — Login
+      </a>
+      <a href="user/dashboard.php" data-auth="true" class="nav-user hidden btn-primary px-8 py-3 text-base rounded-xl">
+        📊 Go to Dashboard
+      </a>
+      <a href="about.html" class="btn-ghost px-8 py-3 text-base rounded-xl">
+        Learn More →
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="mt-16 grid grid-cols-3 gap-6 max-w-lg mx-auto">
+      <div class="text-center">
+        <div class="text-3xl font-black grad-text" id="statUsers">—</div>
+        <div class="text-slate-500 text-xs mt-1">Active Users</div>
+      </div>
+      <div class="text-center border-x border-white/8">
+        <div class="text-3xl font-black grad-text">5</div>
+        <div class="text-slate-500 text-xs mt-1">User Levels</div>
+      </div>
+      <div class="text-center">
+        <div class="text-3xl font-black grad-text" id="statPages">—</div>
+        <div class="text-slate-500 text-xs mt-1">Site Pages</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features Grid ──────────────────────────────────────────── -->
+<section class="py-24 px-6 max-w-7xl mx-auto">
+  <div class="text-center mb-16">
+    <h2 class="text-4xl md:text-5xl font-black mb-4">
+      <span class="text-white">What makes this </span><span class="grad-text">special?</span>
+    </h2>
+    <p class="text-slate-500 max-w-xl mx-auto">Built with modern technologies to deliver a seamless, secure experience.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Feature cards -->
+    <?php
+    $features = [
+      ['🔐','Role-Based Access','5 user levels with granular permission control per level. Admins toggle any permission instantly.','from-violet-500/10 to-purple-500/10','border-violet-500/20'],
+      ['⚡','Real-Time Sync','Firebase Firestore keeps all data synchronized across every device instantly — no page refresh needed.','from-blue-500/10 to-cyan-500/10','border-blue-500/20'],
+      ['👑','Admin Dashboard','Full control panel: manage users, approve/decline registrations, edit permissions, add pages.','from-amber-500/10 to-yellow-500/10','border-amber-500/20'],
+      ['📬','Request System','New users send a registration request. Admin reviews and approves or declines — full control.','from-green-500/10 to-emerald-500/10','border-green-500/20'],
+      ['🛡️','Secure Auth','Firebase Authentication handles logins securely. Password changes, re-authentication, and more.','from-red-500/10 to-rose-500/10','border-red-500/20'],
+      ['📱','Responsive Design','Beautiful on every screen size — mobile, tablet, and desktop. Built with Tailwind CSS.','from-pink-500/10 to-fuchsia-500/10','border-pink-500/20'],
+    ];
+    ?>
+    <?php foreach($features as [$icon,$title,$desc,$from,$border]): ?>
+    <div class="glass stat-card hover:border-violet-500/30 transition-all duration-300 group">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br <?= $from ?> border <?= $border ?> text-2xl mb-4 group-hover:scale-110 transition-transform">
+        <?= $icon ?>
+      </div>
+      <h3 class="text-lg font-bold text-white mb-2"><?= $title ?></h3>
+      <p class="text-slate-500 text-sm leading-relaxed"><?= $desc ?></p>
+    </div>
+    <?php endforeach; ?>
+  </div>
+</section>
+
+<!-- ── User Levels Section ────────────────────────────────────── -->
+<section class="py-20 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 opacity-5" style="background: radial-gradient(ellipse at center, #7c3aed 0%, transparent 70%);"></div>
+  <div class="max-w-5xl mx-auto relative z-10">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-black text-white mb-4">User <span class="grad-text">Levels</span></h2>
+      <p class="text-slate-500">Each level has customizable permissions that the Admin controls.</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <?php
+      $levels = [
+        ['👑','Admin','Full system control','border-amber-500/40 bg-amber-500/5','text-amber-400'],
+        ['⭐','Pro User','Extended access','border-violet-500/40 bg-violet-500/5','text-violet-400'],
+        ['👤','Normal User','Standard access','border-blue-500/40 bg-blue-500/5','text-blue-400'],
+        ['🔵','Low User','Limited access','border-slate-500/40 bg-slate-500/5','text-slate-400'],
+        ['⚪','Lower User','Basic access','border-slate-700/40 bg-slate-700/5','text-slate-500'],
+      ];
+      ?>
+      <?php foreach($levels as [$icon,$name,$desc,$border,$color]): ?>
+      <div class="rounded-xl border <?= $border ?> p-4 text-center hover:scale-105 transition-transform duration-200">
+        <div class="text-3xl mb-2"><?= $icon ?></div>
+        <div class="font-bold <?= $color ?> mb-1"><?= $name ?></div>
+        <div class="text-slate-600 text-xs"><?= $desc ?></div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA Section ────────────────────────────────────────────── -->
+<section class="py-24 px-6">
+  <div class="max-w-2xl mx-auto text-center glass-strong p-10 rounded-3xl glow-primary">
+    <h2 class="text-4xl font-black text-white mb-4">Ready to get started?</h2>
+    <p class="text-slate-400 mb-8">Login to your account or request access from the Admin.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="login.html" class="btn-primary px-8 py-3 text-base rounded-xl">🔐 Login Now</a>
+      <a href="login.html#register" class="btn-ghost px-8 py-3 text-base rounded-xl">✍️ Request Access</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────── -->
+<footer class="mt-8 border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">⚡</span>
+      <span class="font-bold grad-text">Saveen Portal</span>
+    </div>
+    <p class="text-slate-600 text-sm">&copy; <?= date('Y') ?> Saveen Web Portal. All rights reserved.</p>
+    <div class="flex items-center gap-2">
+      <div class="pulse-dot"></div>
+      <span class="text-slate-600 text-xs">All systems operational</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+function toggleMobileMenu() {
+  document.getElementById('mobileMenu').classList.toggle('hidden');
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('userMenuWrap');
+  const dd = document.getElementById('userDropdown');
+  if (wrap && !wrap.contains(e.target) && dd) dd.classList.add('hidden');
+});
+
+// Load live stats
+async function loadStats() {
+  try {
+    const usersSnap = await db.collection('users').get();
+    document.getElementById('statUsers').textContent = usersSnap.size;
+    const pagesSnap = await db.collection('sitePages').get();
+    document.getElementById('statPages').textContent = pagesSnap.size;
+  } catch(_) {}
+}
+loadStats();
+</script>
+</body>
+</html>
